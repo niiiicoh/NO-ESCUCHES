@@ -1,0 +1,22 @@
+{
+  "reflow": [
+    {
+      "route": "/",
+      "overflow": false
+    },
+    {
+      "route": "/game/new",
+      "overflow": false
+    },
+    {
+      "route": "/categories",
+      "overflow": false
+    },
+    {
+      "route": "/admin",
+      "overflow": false
+    }
+  ],
+  "reducedHeightButtonVisible": true,
+  "mobileMenuWorks": true
+}

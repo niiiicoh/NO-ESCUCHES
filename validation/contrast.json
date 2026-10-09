@@ -1,0 +1,72 @@
+[
+  {
+    "foreground": "text",
+    "background": "surface",
+    "ratio": 14.69,
+    "minimum": 4.5,
+    "passes": true
+  },
+  {
+    "foreground": "muted",
+    "background": "surface",
+    "ratio": 8.38,
+    "minimum": 4.5,
+    "passes": true
+  },
+  {
+    "foreground": "bg",
+    "background": "accent",
+    "ratio": 14.92,
+    "minimum": 4.5,
+    "passes": true
+  },
+  {
+    "foreground": "p1",
+    "background": "elevated",
+    "ratio": 6.81,
+    "minimum": 4.5,
+    "passes": true
+  },
+  {
+    "foreground": "p2",
+    "background": "elevated",
+    "ratio": 7.56,
+    "minimum": 4.5,
+    "passes": true
+  },
+  {
+    "foreground": "good",
+    "background": "surface",
+    "ratio": 9.49,
+    "minimum": 4.5,
+    "passes": true
+  },
+  {
+    "foreground": "bad",
+    "background": "surface",
+    "ratio": 7.51,
+    "minimum": 4.5,
+    "passes": true
+  },
+  {
+    "foreground": "border",
+    "background": "surface",
+    "ratio": 3.7,
+    "minimum": 3,
+    "passes": true
+  },
+  {
+    "foreground": "border",
+    "background": "bg",
+    "ratio": 4.21,
+    "minimum": 3,
+    "passes": true
+  },
+  {
+    "foreground": "border",
+    "background": "elevated",
+    "ratio": 3.14,
+    "minimum": 3,
+    "passes": true
+  }
+]

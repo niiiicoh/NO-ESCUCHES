@@ -5,7 +5,13 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     watch: {
-      ignored: ['**/docs/**', '**/validation/**', '**/test-results/**', '**/playwright-report/**'],
+      ignored: [
+        '**/*.tsbuildinfo',
+        '**/docs/**',
+        '**/validation/**',
+        '**/test-results/**',
+        '**/playwright-report/**',
+      ],
     },
   },
   build: {

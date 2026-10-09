@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowRight, Repeat2, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../features/game/store';
@@ -9,6 +10,9 @@ export function Results() {
   const store = useAppStore(),
     game = store.currentGame,
     navigate = useNavigate();
+  useEffect(() => {
+    if (game?.status === 'FINISHED') void store.viewResults(true);
+  }, [game?.id, game?.status]);
   if (!game)
     return (
       <Empty
@@ -56,7 +60,9 @@ export function Results() {
                         )}
                       </div>
                     </div>
-                    <span>${i.price}</span>
+                    <span>
+                      {i.autoAssigned ? 'Automático' : 'Compra'} · ${i.price}
+                    </span>
                   </li>
                 ))}
               </ul>

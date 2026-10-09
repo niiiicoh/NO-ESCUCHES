@@ -3,7 +3,7 @@ export const normalize = (s: string) => s.trim().normalize('NFKC').toLocaleLower
 const integer = (n: number, min = 0) => Number.isSafeInteger(n) && n >= min;
 export function validateConfig(c: GameConfig): string[] {
   const e: string[] = [];
-  if (!integer(c.startingMoney)) e.push('El dinero inicial debe ser un entero no negativo.');
+  if (!integer(c.startingMoney, 1)) e.push('El dinero inicial debe ser un entero desde $1.');
   if (!integer(c.totalItems, 2)) e.push('El total debe ser un entero de al menos 2 ítems.');
   if (
     !integer(c.maxItemsPerPlayer, 1) ||
@@ -89,6 +89,7 @@ export function createGame(s: Setup, rng: () => number = Math.random): Game {
     currentItemIndex: 0,
     status: 'PLAYING',
     createdAt: new Date().toISOString(),
+    openingAuction: { startingPlayerId: null, confirmed: false },
   };
 }
 export function summary(g: Game, playerId: string) {
@@ -111,16 +112,25 @@ export function assignItem(
   expectedItemId: string,
 ): Game {
   if (game.status !== 'PLAYING') throw new Error('No hay una partida activa.');
+  if (!game.openingAuction.confirmed)
+    throw new Error('Resuelve la ruleta y confirma Comenzar subasta.');
   const current = game.items[game.currentItemIndex];
   if (!current || current.id !== expectedItemId || current.assignedPlayerId !== null)
     throw new Error('Esta decisión ya fue registrada.');
-  if (!integer(price)) throw new Error('El precio debe ser un entero no negativo.');
+  if (price === 0) throw new Error('La apuesta mínima es $1.');
+  if (!integer(price, 1)) throw new Error('Ingresa un monto entero desde $1.');
   const s = summary(game, playerId);
   if (s.items.length >= game.config.maxItemsPerPlayer)
     throw new Error('Este jugador llegó al límite.');
+  if (s.balance < 1) throw new Error('Este jugador no tiene saldo para una compra.');
   if (price > s.balance)
     throw new Error(`Le quedan $${s.balance}. El precio no puede superar ese saldo.`);
-  const g = structuredClone(game);
+  return applyAssignment(game, playerId, price);
+}
+// Internal transition also reconstructs legitimate historical $0 purchases during validation.
+function applyAssignment(game: Game, playerId: string, price: number): Game {
+  const g = structuredClone(game),
+    s = summary(game, playerId);
   Object.assign(g.items[g.currentItemIndex], { assignedPlayerId: playerId, price });
   if (s.items.length + 1 === g.config.maxItemsPerPlayer) {
     const other = g.players.find((p) => p.id !== playerId)!;
@@ -132,4 +142,47 @@ export function assignItem(
   g.currentItemIndex = next < 0 ? g.items.length : next;
   g.status = next < 0 ? 'FINISHED' : 'PLAYING';
   return g;
+}
+export function drawOpening(game: Game, rng: () => number = Math.random): Game {
+  if (
+    game.status !== 'PLAYING' ||
+    game.openingAuction.confirmed ||
+    game.openingAuction.startingPlayerId ||
+    game.items.some((i) => i.assignedPlayerId)
+  )
+    throw new Error('La ruleta de esta partida ya está resuelta.');
+  const value = rng();
+  if (!Number.isFinite(value) || value < 0 || value >= 1)
+    throw new Error('El sorteo no pudo completarse.');
+  return {
+    ...game,
+    openingAuction: { startingPlayerId: game.players[value < 0.5 ? 0 : 1].id, confirmed: false },
+  };
+}
+export function confirmOpening(game: Game): Game {
+  if (
+    !game.openingAuction.startingPlayerId ||
+    game.openingAuction.confirmed ||
+    game.status !== 'PLAYING'
+  )
+    throw new Error('Primero gira la ruleta.');
+  return { ...game, openingAuction: { ...game.openingAuction, confirmed: true } };
+}
+export function isUndoTransition(current: Game, snapshot: Game): boolean {
+  const item = current.items[snapshot.currentItemIndex];
+  if (
+    snapshot.status !== 'PLAYING' ||
+    !snapshot.openingAuction.confirmed ||
+    !item?.assignedPlayerId ||
+    item.autoAssigned
+  )
+    return false;
+  try {
+    return (
+      JSON.stringify(applyAssignment(snapshot, item.assignedPlayerId, item.price)) ===
+      JSON.stringify(current)
+    );
+  } catch {
+    return false;
+  }
 }

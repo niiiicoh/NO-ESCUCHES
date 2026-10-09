@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { createGame, selectRandom, assignItem, summary, validateConfig } from './engine';
+import {
+  createGame,
+  selectRandom,
+  assignItem,
+  summary,
+  validateConfig,
+  drawOpening,
+  confirmOpening,
+} from './engine';
 import { seedCatalog } from '../../data/seed';
 import { gameStateSchema, catalogSchema } from '../../lib/schemas';
 import { JsonStorage, type StorageAdapter } from '../../lib/storage';
@@ -18,11 +26,16 @@ const pool = seedCatalog()
   .map((i) => ({ ...i, sourceItemId: i.id }));
 const make = (overrides: Partial<GameConfig> = {}) => {
   const c = { ...config, ...overrides };
-  return createGame({
-    names: ['Nicolás', 'Bastián'],
-    config: c,
-    choices: selectRandom(pool, c.totalItems, c.badCount),
-  });
+  return confirmOpening(
+    drawOpening(
+      createGame({
+        names: ['Nicolás', 'Bastián'],
+        config: c,
+        choices: selectRandom(pool, c.totalItems, c.badCount),
+      }),
+      () => 0.25,
+    ),
+  );
 };
 describe('motor de la partida', () => {
   it.each([0, 2, 4, 6, 8])('preserva la composición %i malos sin repetición', (badCount) => {
@@ -48,7 +61,7 @@ describe('motor de la partida', () => {
     expect(g.players[0].name).toBe('Nico');
     expect(g.items.map((i) => i.sourceItemId).sort()).toEqual(choices.map((i) => i.id).sort());
   });
-  it.each([-1, 1.5, NaN, Infinity, 21])(
+  it.each([0, -1, 1.5, NaN, Infinity, 21])(
     'rechaza precio inválido %s y no muta la partida',
     (price) => {
       const g = make(),
@@ -57,16 +70,18 @@ describe('motor de la partida', () => {
       expect(g).toEqual(snapshot);
     },
   );
-  it('cobra $3 una sola vez, rechaza la decisión anterior y acepta $0 sin dinero', () => {
-    const g = make();
-    const next = assignItem(g, g.players[0].id, 3, g.items[0].id);
+  it('cobra $3 una sola vez y bloquea compra sin saldo', () => {
+    const g = make(),
+      next = assignItem(g, g.players[0].id, 3, g.items[0].id);
     expect(summary(next, g.players[0].id).balance).toBe(17);
     expect(() => assignItem(next, g.players[0].id, 3, g.items[0].id)).toThrow('ya fue registrada');
-    const zero = make({ startingMoney: 0 });
-    expect(
-      summary(assignItem(zero, zero.players[0].id, 0, zero.items[0].id), zero.players[0].id)
-        .balance,
-    ).toBe(0);
+    expect(() => make({ startingMoney: 0 })).toThrow('desde $1');
+    const low = make({ startingMoney: 1 }),
+      spent = assignItem(low, low.players[0].id, 1, low.items[0].id);
+    expect(summary(spent, low.players[0].id).balance).toBe(0);
+    expect(() => assignItem(spent, low.players[0].id, 1, spent.items[1].id)).toThrow(
+      'no tiene saldo',
+    );
   });
   it('reparte lo restante gratis y permite restaurar el snapshot completo', () => {
     let g = make();
@@ -78,7 +93,14 @@ describe('motor de la partida', () => {
     expect(end.items.filter((i) => i.autoAssigned)).toHaveLength(4);
     expect(summary(end, g.players[1].id).balance).toBe(20);
     const restored = gameStateSchema.parse(
-      JSON.parse(JSON.stringify({ version: 1, currentGame: end, undoSnapshot: before })),
+      JSON.parse(
+        JSON.stringify({
+          version: 2,
+          resultsViewedGameId: null,
+          currentGame: end,
+          undoSnapshot: before,
+        }),
+      ),
     );
     expect(restored.undoSnapshot).toEqual(before);
     expect(restored.undoSnapshot?.status).toBe('PLAYING');
@@ -88,7 +110,7 @@ describe('motor de la partida', () => {
   it('finaliza por agotamiento sin alcanzar un límite de 5', () => {
     let g = make({ maxItemsPerPlayer: 5 });
     for (let n = 0; n < 8; n++)
-      g = assignItem(g, g.players[n % 2].id, 0, g.items[g.currentItemIndex].id);
+      g = assignItem(g, g.players[n % 2].id, 1, g.items[g.currentItemIndex].id);
     expect(g.status).toBe('FINISHED');
     expect(g.items.some((i) => i.autoAssigned)).toBe(false);
   });
@@ -164,7 +186,12 @@ describe('persistencia validada', () => {
       const g = make();
       mutate(g);
       expect(
-        gameStateSchema.safeParse({ version: 1, currentGame: g, undoSnapshot: null }).success,
+        gameStateSchema.safeParse({
+          version: 2,
+          resultsViewedGameId: null,
+          currentGame: g,
+          undoSnapshot: null,
+        }).success,
       ).toBe(false);
     }
   });

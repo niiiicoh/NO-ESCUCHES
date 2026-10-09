@@ -1,10 +1,26 @@
 import { test, expect, type Page } from '@playwright/test';
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('no-escuches:preferences:v1'))
+      localStorage.setItem(
+        'no-escuches:preferences:v1',
+        JSON.stringify({ version: 1, soundEnabled: false, volume: 35, motion: 'none' }),
+      );
+  });
+});
+async function openAuction(page: Page) {
+  if (await page.getByRole('button', { name: 'Girar ruleta', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Girar ruleta', exact: true }).click();
+  if (await page.getByRole('button', { name: 'Comenzar subasta', exact: true }).isVisible())
+    await page.getByRole('button', { name: 'Comenzar subasta', exact: true }).click();
+}
 async function setup(page: Page) {
   await page.goto('/game/new');
   await page.getByLabel('Jugador 1', { exact: true }).fill('Nicolás');
   await page.getByLabel('Jugador 2', { exact: true }).fill('Bastián');
 }
 async function buy(page: Page, name = 'Nicolás', price = 3) {
+  await openAuction(page);
   await page.getByRole('button', { name: new RegExp(`Jugador.*${name}`) }).click();
   await page.getByRole('button', { name: `$${price}`, exact: true }).click();
   await page.getByRole('button', { name: `Asignar a ${name} por $${price}`, exact: true }).click();
@@ -32,11 +48,12 @@ test('categoría recién creada, mover ítems, copia de partida y repetición in
   await page.getByLabel('Jugador 1', { exact: true }).fill('Nicolás');
   await page.getByLabel('Jugador 2', { exact: true }).fill('Bastián');
   await page.getByRole('button', { name: 'Comenzar partida' }).click();
+  await openAuction(page);
   await page.setViewportSize({ width: 390, height: 650 });
   await page.screenshot({ path: 'validation/long-item-390.png', fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await buy(page, 'Nicolás', 0);
-  await page.getByRole('link', { name: 'Ver resultados' }).click();
+  await buy(page, 'Nicolás', 1);
+  await page.getByRole('button', { name: 'Ver resultados' }).click();
   const original = await page.evaluate(() => localStorage.getItem('no-escuches:game:v1'));
   await page.goto(categoryUrl);
   await page
@@ -65,6 +82,7 @@ test('partida, doble clic, recarga, reparto, resultados y undo persistido', asyn
   await page.getByRole('spinbutton', { name: 'Malos', exact: true }).fill('6');
   await page.getByRole('button', { name: 'Comenzar partida' }).click();
   await expect(page).toHaveURL(/game\/play/);
+  await openAuction(page);
   await expect(page.locator('main')).not.toContainText('Bueno');
   await expect(page.locator('main')).not.toContainText('Malo');
   await page.getByRole('button', { name: /Jugador.*Nicolás/ }).click();
@@ -79,7 +97,7 @@ test('partida, doble clic, recarga, reparto, resultados y undo persistido', asyn
   for (let n = 0; n < 3; n++) await buy(page);
   await expect(page.getByRole('heading', { name: 'Partida terminada.' })).toBeVisible();
   await expect(page.locator('.finished-card')).toContainText('4 ítems restantes');
-  await page.getByRole('link', { name: 'Ver resultados' }).click();
+  await page.getByRole('button', { name: 'Ver resultados' }).click();
   await expect(page.locator('.result-items li')).toHaveCount(8);
   await page.reload();
   await page.getByRole('button', { name: 'Deshacer última acción' }).click();
@@ -209,12 +227,17 @@ test('responsive, capturas, texto largo, foco y movimiento reducido', async ({ p
     if (await page.getByRole('button', { name: 'Crear nueva partida', exact: true }).isVisible())
       await page.getByRole('button', { name: 'Crear nueva partida', exact: true }).click();
     await expect(page).toHaveURL(/game\/play/);
+    await page.screenshot({ path: `validation/wheel-${width}.png`, fullPage: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await openAuction(page);
     await page.screenshot({ path: `validation/play-${width}.png`, fullPage: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    for (let n = 0; n < 4; n++) await buy(page, 'Nicolás con un nombre excepcionalmente largo', 0);
-    await page.getByRole('link', { name: 'Ver resultados' }).click();
+    for (let n = 0; n < 4; n++) await buy(page, 'Nicolás con un nombre excepcionalmente largo', 1);
+    await page.getByRole('button', { name: 'Ver resultados' }).click();
     await page.screenshot({ path: `validation/results-${width}.png`, fullPage: true });
     await page.goto('/admin');
     await page.screenshot({ path: `validation/admin-${width}.png`, fullPage: true });
@@ -234,8 +257,8 @@ test('repetición directa, navegación protegida y foco de confirmación', async
   await page.getByRole('button', { name: 'Comenzar partida' }).click();
   await page.goto('/game/results');
   await expect(page).toHaveURL(/game\/play/);
-  for (let i = 0; i < 4; i++) await buy(page, 'Nicolás', 0);
-  await page.getByRole('link', { name: 'Ver resultados' }).click();
+  for (let i = 0; i < 4; i++) await buy(page, 'Nicolás', 1);
+  await page.getByRole('button', { name: 'Ver resultados' }).click();
   const id = await page.evaluate(
     () => JSON.parse(localStorage.getItem('no-escuches:game:v1')!).currentGame.id,
   );
@@ -267,6 +290,7 @@ test('capacidad, precio inválido y agotamiento sin reparto automático', async 
   await page.getByLabel('Total de ítems', { exact: true }).fill('8');
   await page.getByLabel('Límite por jugador', { exact: true }).fill('5');
   await page.getByRole('button', { name: 'Comenzar partida' }).click();
+  await openAuction(page);
   await page.getByRole('button', { name: /Jugador.*Nicolás/ }).click();
   await page.getByLabel('Otro monto', { exact: true }).fill('21');
   await expect(
@@ -274,8 +298,8 @@ test('capacidad, precio inválido y agotamiento sin reparto automático', async 
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Asignar a Nicolás por $21' })).toBeDisabled();
   await page.getByLabel('Otro monto', { exact: true }).fill('-1');
-  await expect(page.getByText('Usa un precio entero no negativo.')).toBeVisible();
-  for (let i = 0; i < 8; i++) await buy(page, i % 2 === 0 ? 'Nicolás' : 'Bastián', 0);
+  await expect(page.getByText('Ingresa un monto entero desde $1.')).toBeVisible();
+  for (let i = 0; i < 8; i++) await buy(page, i % 2 === 0 ? 'Nicolás' : 'Bastián', 1);
   await expect(page.getByRole('heading', { name: 'Partida terminada.' })).toBeVisible();
   await expect(page.locator('.finished-card')).toContainText('Todos los ítems tienen dueño.');
   await page.reload();

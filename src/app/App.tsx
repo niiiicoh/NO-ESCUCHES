@@ -12,29 +12,37 @@ import { SetupPage } from '../pages/Setup';
 import { Play } from '../pages/Play';
 import { Results } from '../pages/Results';
 import { Admin, AdminCategory } from '../pages/Admin';
+import { clearExits } from '../services/motion';
+import { Effects } from '../features/preferences/Effects';
+import { PreferencesDialog, SoundToggle } from '../features/preferences/Controls';
+import { usePreferences } from '../features/preferences/store';
+import { useMotion, motionDurations } from '../features/preferences/motion';
 export function App() {
+  const motion = useMotion();
   const store = useAppStore(),
     location = useLocation(),
     confirm = useConfirm(),
     [menu, setMenu] = useState(false),
     main = useRef<HTMLElement>(null);
   useEffect(() => {
+    usePreferences.getState().init();
     void useAppStore.getState().init();
   }, []);
   useEffect(() => {
     setMenu(false);
     window.scrollTo(0, 0);
+    clearExits();
     if (!store.ready) return;
     const context = gsap.context(() => {
-      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      if (motion === 'full')
         gsap.fromTo(
           'h1',
           { y: 6, opacity: 0.8 },
-          { y: 0, opacity: 1, duration: 0.18, clearProps: 'all' },
+          { y: 0, opacity: 1, duration: motionDurations.panel / 1000, clearProps: 'all' },
         );
     }, main);
     return () => context.revert();
-  }, [location.pathname, store.ready]);
+  }, [location.pathname, store.ready, motion]);
   return (
     <>
       <a className="skip-link" href="#main">
@@ -48,16 +56,20 @@ export function App() {
             </span>
             NO ESCUCHES<span className="brand-period">.</span>
           </Link>
-          <Button
-            variant="ghost"
-            className="menu-toggle"
-            aria-expanded={menu}
-            aria-controls="navigation"
-            aria-label={menu ? 'Cerrar menú' : 'Abrir menú'}
-            onClick={() => setMenu(!menu)}
-          >
-            {menu ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-          </Button>
+          <div className="header-controls">
+            <SoundToggle />
+            <PreferencesDialog />
+            <Button
+              variant="ghost"
+              className="menu-toggle"
+              aria-expanded={menu}
+              aria-controls="navigation"
+              aria-label={menu ? 'Cerrar menú' : 'Abrir menú'}
+              onClick={() => setMenu(!menu)}
+            >
+              {menu ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+            </Button>
+          </div>
           <nav
             id="navigation"
             className={menu ? 'nav-links open' : 'nav-links'}
@@ -72,6 +84,7 @@ export function App() {
           </nav>
         </div>
       </header>
+      <Effects />
       <main
         id="main"
         tabIndex={-1}
@@ -118,24 +131,26 @@ export function App() {
                   </div>
                 ),
             )}
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/game/new" element={<SetupPage />} />
-              <Route path="/game/play" element={<Play />} />
-              <Route path="/game/results" element={<Results />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/categories/:id" element={<AdminCategory />} />
-              <Route
-                path="*"
-                element={
-                  <Empty
-                    title="Por aquí no era."
-                    description="Esta página no existe. La próxima partida sí puede existir."
-                  />
-                }
-              />
-            </Routes>
+            <div className="route-content" key={location.pathname}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/game/new" element={<SetupPage />} />
+                <Route path="/game/play" element={<Play />} />
+                <Route path="/game/results" element={<Results />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/categories/:id" element={<AdminCategory />} />
+                <Route
+                  path="*"
+                  element={
+                    <Empty
+                      title="Por aquí no era."
+                      description="Esta página no existe. La próxima partida sí puede existir."
+                    />
+                  }
+                />
+              </Routes>
+            </div>
           </>
         )}
       </main>

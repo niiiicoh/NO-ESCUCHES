@@ -309,9 +309,11 @@ input[type='range'] {
   background: var(--accent);
   color: var(--bg);
   transform: translateY(-180%);
+  clip-path: inset(50%);
 }
 .skip-link:focus {
   transform: none;
+  clip-path: none;
 }
 .sr-only {
   position: absolute;
@@ -605,6 +607,424 @@ input[type='range'] {
 }
 .category-emoji {
   font-size: 2rem;
+}
+
+/* Interaction system: motion never owns a functional transition. */
+:root {
+  --motion-press: 100ms;
+  --motion-selection: 160ms;
+  --motion-panel: 240ms;
+  --motion-event: 360ms;
+  --motion-stagger: 40ms;
+  --motion-wheel: 2600ms;
+}
+.button,
+a,
+.player-card,
+.selection-option,
+summary {
+  transition:
+    background var(--motion-selection),
+    border-color var(--motion-selection),
+    color var(--motion-selection),
+    transform var(--motion-press),
+    opacity var(--motion-selection);
+}
+.button:active:not(:disabled),
+a:active,
+.player-card:active:not(:disabled),
+summary:active {
+  transform: scale(0.975);
+}
+.input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  transition:
+    border-color var(--motion-selection),
+    box-shadow var(--motion-selection);
+}
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  order: 3;
+}
+.header-controls .button {
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
+}
+.header-controls .menu-toggle {
+  display: none;
+}
+.nav-inner .nav-links {
+  margin-left: auto;
+}
+.dialog-close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
+.preferences-dialog > .field {
+  margin-top: 24px;
+}
+.preferences-dialog .sound-toggle {
+  margin-bottom: 16px;
+}
+.setup-sound {
+  margin: 24px 0;
+}
+.setup-sound .button {
+  padding-inline: 0;
+}
+.audio-status {
+  max-width: 1136px;
+  margin: 16px auto;
+  padding: 12px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+@keyframes feedback-enter {
+  from {
+    opacity: 0.4;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes feedback-fade {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes feedback-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes dialog-exit {
+  from {
+    opacity: 1;
+    translate: 0 0;
+  }
+  to {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+.route-content,
+.current-card,
+.editable-row,
+.admin-item,
+.admin-category {
+  animation: feedback-enter var(--motion-panel) ease-out both;
+}
+.player-card.selected,
+.quick-prices [aria-pressed='true'],
+.selection-option.is-selected,
+.segmented [aria-pressed='true'] {
+  animation: feedback-fade var(--motion-selection) ease-out;
+}
+.value-pulse,
+.active-label,
+.inactive-label,
+.notice,
+.feedback:not(:empty) {
+  animation: feedback-fade var(--motion-event) ease-out;
+}
+.finished-card,
+.wheel-result h2,
+.opening-panel {
+  animation: feedback-enter var(--motion-event) ease-out both;
+}
+.result-items li {
+  animation: feedback-enter var(--motion-panel) ease-out both;
+}
+.result-items li:nth-child(2) {
+  animation-delay: 40ms;
+}
+.result-items li:nth-child(3) {
+  animation-delay: 80ms;
+}
+.result-items li:nth-child(4) {
+  animation-delay: 120ms;
+}
+.result-items li:nth-child(5) {
+  animation-delay: 160ms;
+}
+.result-items li:nth-child(6) {
+  animation-delay: 200ms;
+}
+.result-items li:nth-child(7) {
+  animation-delay: 240ms;
+}
+.result-items li:nth-child(n + 8) {
+  animation-delay: 280ms;
+}
+.dialog-content[data-state='open'] {
+  animation: dialog-enter var(--motion-panel) ease-out;
+}
+.dialog-content[data-state='closed'] {
+  animation: dialog-exit var(--motion-panel) ease-in;
+}
+.dialog-overlay[data-state='open'] {
+  animation: feedback-fade var(--motion-panel) ease-out;
+}
+.dialog-overlay[data-state='closed'] {
+  animation: dialog-exit var(--motion-panel) ease-in;
+}
+.temporary[open] > .temporary-form,
+.nav-links.open {
+  animation: feedback-enter var(--motion-panel) ease-out;
+}
+.input[aria-invalid='true'],
+.error-notice {
+  animation: feedback-fade var(--motion-selection) ease-out;
+}
+.opening-layout {
+  display: block;
+  max-width: 760px;
+}
+.opening-panel {
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 40px 32px;
+  border-radius: 20px;
+}
+.opening-panel h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+.opening-panel > p.muted {
+  max-width: 540px;
+  margin: 0 auto 24px;
+}
+.wheel-wrap {
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  position: relative;
+  margin: 32px auto;
+  border: 8px solid var(--elevated);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+}
+.wheel-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform-origin: center;
+}
+.wheel-segments {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.wheel-segment-1 {
+  fill: var(--p1);
+}
+.wheel-segment-2 {
+  fill: var(--p2);
+}
+.wheel-pointer {
+  position: absolute;
+  top: -20px;
+  left: calc(50% - 11px);
+  z-index: 3;
+  width: 22px;
+  height: 28px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.wheel-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  background: var(--bg);
+  color: var(--text);
+  border: 3px solid var(--surface);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font:
+    800 0.8rem 'Outfit',
+    sans-serif;
+}
+.wheel-name {
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+  width: 34%;
+  color: var(--bg);
+  font:
+    600 0.875rem/1.3 'Outfit',
+    sans-serif;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.wheel-name-1 {
+  left: 75%;
+}
+.wheel-name-2 {
+  left: 25%;
+}
+.wheel-legend {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+.wheel-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--identity);
+  overflow-wrap: anywhere;
+  min-width: 0;
+  max-width: 100%;
+}
+.wheel-legend small {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.identity-dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  background: var(--identity);
+  flex-shrink: 0;
+}
+.wheel-result {
+  margin: 24px 0;
+}
+.wheel-result h2 {
+  margin-bottom: 12px;
+  font-size: 1.5rem;
+}
+.wheel-action {
+  width: 100%;
+  max-width: 350px;
+}
+.wheel-result p {
+  font-size: 0.875rem;
+}
+.result-items li > span {
+  font-size: 0.75rem;
+  max-width: 110px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.current-card {
+  min-height: 200px;
+}
+@media (max-width: 767px) {
+  .header-controls {
+    order: 0;
+    gap: 0;
+  }
+  .header-controls .menu-toggle {
+    display: inline-flex;
+  }
+  .nav-inner {
+    gap: 8px;
+  }
+  .nav-inner .nav-links {
+    margin-left: 0;
+  }
+  .brand {
+    font-size: 1rem;
+  }
+  .brand-icon {
+    margin-right: 6px;
+    width: 32px;
+    height: 32px;
+  }
+  .nav-inner {
+    padding-inline: 16px;
+  }
+  .quick-prices {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .opening-panel {
+    padding: 28px 20px;
+  }
+  .opening-panel > p.muted {
+    font-size: 0.875rem;
+  }
+  .wheel-wrap {
+    width: min(100%, 280px);
+    margin-block: 28px;
+  }
+  .wheel-name {
+    font-size: 0.75rem;
+  }
+  .wheel-legend {
+    gap: 16px;
+    font-size: 0.875rem;
+  }
+  .audio-status {
+    margin: 12px 16px;
+  }
+  .preferences-dialog h2 {
+    padding-right: 20px;
+  }
+}
+html[data-motion='reduced'] *,
+html[data-motion='reduced'] *::before,
+html[data-motion='reduced'] *::after {
+  animation-name: feedback-fade !important;
+  animation-duration: 80ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 80ms !important;
+}
+html[data-motion='reduced'] .button:active,
+html[data-motion='reduced'] a:active,
+html[data-motion='reduced'] .player-card:active,
+html[data-motion='reduced'] summary:active {
+  transform: none;
+}
+html[data-motion='none'] *,
+html[data-motion='none'] *::before,
+html[data-motion='none'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+html[data-motion='none'] .button:active,
+html[data-motion='none'] a:active,
+html[data-motion='none'] .player-card:active,
+html[data-motion='none'] summary:active {
+  transform: none;
+}
+html[data-motion='none'] .hero-art:hover .art-card-front,
+html[data-motion='reduced'] .hero-art:hover .art-card-front {
+  transform: rotate(9deg) translate(20px, -6px);
 }
 .category-card h2 {
   font-size: 1.5rem;
@@ -1465,4 +1885,18 @@ fieldset {
   overflow-wrap: anywhere;
   min-width: 0;
   max-width: 100%;
+}
+
+@keyframes return-card {
+  from {
+    opacity: 0.5;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.current-card.undo-card {
+  animation-name: return-card;
 }

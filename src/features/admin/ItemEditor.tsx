@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Category, Item, ItemType } from '../../types';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Field, TypeTag } from '../../components/shared';
 import { useConfirm } from '../../components/ui/confirm';
+import { animateExit } from '../../services/motion';
+import { useMotion } from '../preferences/motion';
 import { catalogRepository } from '../../repositories/catalog';
 export function ItemEditor({
   item,
@@ -16,17 +18,23 @@ export function ItemEditor({
   onSaved: () => Promise<void>;
   run: (action: () => Promise<void>, message: string) => Promise<void>;
 }) {
+  const motion = useMotion(),
+    row = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState(false),
     [name, setName] = useState(item.name),
     [type, setType] = useState(item.type),
     [categoryId, setCategoryId] = useState(item.categoryId),
     confirm = useConfirm();
   return (
-    <div className="admin-item">
+    <div className="admin-item" ref={row}>
       <div className="admin-item-info">
         <strong>{item.name}</strong>
         <TypeTag type={item.type} />
-        {!item.active && <span className="inactive-label">Inactivo</span>}
+        {!item.active && (
+          <span className="inactive-label" key={String(item.active)}>
+            Inactivo
+          </span>
+        )}
       </div>
       {editing ? (
         <form
@@ -115,6 +123,7 @@ export function ItemEditor({
               )
                 void run(async () => {
                   await catalogRepository.deleteItem(item.id);
+                  animateExit(row.current, motion);
                   await onSaved();
                 }, 'Ítem eliminado.');
             }}

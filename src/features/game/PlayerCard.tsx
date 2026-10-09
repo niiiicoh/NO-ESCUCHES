@@ -35,8 +35,10 @@ export function PlayerCard({
       </span>
       <span className="player-name">{player.name}</span>
       <span className="player-stats">
-        <strong>${s.balance}</strong>
-        <span>
+        <strong key={s.balance} className="value-pulse">
+          ${s.balance}
+        </strong>
+        <span key={s.items.length} className="value-pulse">
           {s.items.length} / {game.config.maxItemsPerPlayer} ítems
         </span>
       </span>

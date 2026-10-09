@@ -10,6 +10,10 @@ import { Input } from '../components/ui/input';
 import { Composition, Field, PageHeading, Empty } from '../components/shared';
 import { ItemEditor } from '../features/admin/ItemEditor';
 import type { ItemType } from '../types';
+import { emitEffect } from '../services/events';
+import { audioService } from '../services/audio';
+import { useMotion } from '../features/preferences/motion';
+import { animateExit } from '../services/motion';
 function useAdminActions() {
   const refresh = useAppStore((s) => s.refreshCatalog),
     [notice, setNotice] = useState(''),
@@ -22,12 +26,17 @@ function useAdminActions() {
     setBusy(true);
     setError('');
     setNotice('');
+    void audioService.unlock();
     try {
       await action();
       await refresh();
       setNotice(message);
+      emitEffect(
+        message.toLocaleLowerCase().includes('eliminad') ? 'CATALOG_DELETE' : 'CATALOG_SAVE',
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo guardar.');
+      emitEffect('REJECT');
     } finally {
       lock.current = false;
       setBusy(false);
@@ -36,6 +45,7 @@ function useAdminActions() {
   return { run, notice, error, busy, refresh };
 }
 export function Admin() {
+  const motion = useMotion();
   const catalog = useAppStore((s) => s.catalog),
     auth = useAuth(),
     actions = useAdminActions(),
@@ -120,7 +130,8 @@ export function Admin() {
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={async () => {
+                        onClick={async (e) => {
+                          const card = e.currentTarget.closest<HTMLElement>('.admin-category');
                           if (
                             await confirm(
                               `¿Eliminar ${c.name}?`,
@@ -128,10 +139,10 @@ export function Admin() {
                               'Eliminar categoría',
                             )
                           )
-                            void actions.run(
-                              () => catalogRepository.deleteCategory(c.id),
-                              'Categoría eliminada.',
-                            );
+                            void actions.run(async () => {
+                              await catalogRepository.deleteCategory(c.id);
+                              animateExit(card, motion);
+                            }, 'Categoría eliminada.');
                         }}
                       >
                         Eliminar

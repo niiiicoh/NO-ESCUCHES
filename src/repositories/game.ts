@@ -1,5 +1,5 @@
 import { storage, keys } from '../lib/storage';
-import { gameStateSchema } from '../lib/schemas';
+import { gameStateSchema, currentGameStateSchema } from '../lib/schemas';
 import type { PersistedGameState } from '../types';
 export interface GameRepository {
   load(): Promise<PersistedGameState>;
@@ -9,14 +9,15 @@ export const gameRepository: GameRepository = {
   async load() {
     return (
       storage.read(keys.game, gameStateSchema) ?? {
-        version: 1,
+        version: 2,
+        resultsViewedGameId: null,
         currentGame: null,
         undoSnapshot: null,
       }
     );
   },
   async save(state) {
-    gameStateSchema.parse(state);
+    currentGameStateSchema.parse(state);
     storage.write(keys.game, state);
   },
 };

@@ -49,11 +49,13 @@ export interface Game {
   currentItemIndex: number;
   status: 'PLAYING' | 'FINISHED';
   createdAt: string;
+  openingAuction: { startingPlayerId: string | null; confirmed: boolean; legacySkipped?: true };
 }
 export interface PersistedGameState {
-  version: 1;
+  version: 2;
   currentGame: Game | null;
   undoSnapshot: Game | null;
+  resultsViewedGameId: string | null;
 }
 export interface Catalog {
   version: 1;

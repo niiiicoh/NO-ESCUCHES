@@ -1,4 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useLayoutEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { useMotion } from '../features/preferences/motion';
+import { SoundToggle } from '../features/preferences/Controls';
+import { audioService } from '../services/audio';
+import { emitEffect } from '../services/events';
+import { animateExit } from '../services/motion';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, X, ArrowRight } from 'lucide-react';
 import type { Choice, Game, GameConfig, ItemType, SelectionMode } from '../types';
@@ -23,6 +29,15 @@ const choiceFromGame = (g: Game) =>
     type: i.type,
   }));
 export function SetupPage() {
+  const motion = useMotion(),
+    summaryRef = useRef<HTMLElement>(null),
+    pendingFocus = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    if (pendingFocus.current) {
+      document.getElementById(pendingFocus.current)?.focus();
+      pendingFocus.current = null;
+    }
+  });
   const store = useAppStore(),
     navigate = useNavigate(),
     location = useLocation(),
@@ -87,6 +102,17 @@ export function SetupPage() {
     startingMoney: Number(money),
     badCount: mode === 'RANDOM' ? Number(bad) : chosen.filter((i) => i.type === 'BAD').length,
   };
+  useLayoutEffect(() => {
+    if (motion === 'none') return;
+    const context = gsap.context(() => {
+      gsap.fromTo(
+        'dd,.composition',
+        { opacity: 0.55 },
+        { opacity: 1, duration: motion === 'reduced' ? 0.08 : 0.16, clearProps: 'all' },
+      );
+    }, summaryRef);
+    return () => context.revert();
+  }, [total, limit, bad, mode, categoryId, custom.length, selected.length, motion]);
   const numberErrors = validateConfig(config);
   const goodCount =
       mode === 'RANDOM'
@@ -119,6 +145,7 @@ export function SetupPage() {
     if (submitting) return;
     setError('');
     setSubmitting(true);
+    void audioService.unlock();
     try {
       if (numberErrors.length) throw new Error(numberErrors.join(' '));
       if (mode !== 'CUSTOM' && !category) throw new Error('Selecciona una categoría activa.');
@@ -141,6 +168,7 @@ export function SetupPage() {
       if (await store.start(createGame(s))) navigate('/game/play');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo crear la partida.');
+      emitEffect('REJECT');
     } finally {
       setSubmitting(false);
     }
@@ -202,8 +230,8 @@ export function SetupPage() {
                 label="Dinero por jugador"
                 hint="Dinero ficticio."
                 error={
-                  !money || !Number.isSafeInteger(Number(money)) || Number(money) < 0
-                    ? 'Usa un entero desde 0.'
+                  !money || !Number.isSafeInteger(Number(money)) || Number(money) < 1
+                    ? 'Usa un entero desde 1.'
                     : undefined
                 }
               >
@@ -212,7 +240,7 @@ export function SetupPage() {
                     id={id}
                     aria-describedby={desc}
                     type="number"
-                    min="0"
+                    min="1"
                     step="1"
                     value={money}
                     onChange={(e) => setMoney(e.target.value)}
@@ -330,17 +358,29 @@ export function SetupPage() {
                             <Button
                               variant="ghost"
                               aria-label={`Eliminar fila ${index + 1} de ${type === 'GOOD' ? 'buenos' : 'malos'}`}
-                              onClick={() => setCustom(custom.filter((x) => x.id !== i.id))}
+                              onClick={(e) => {
+                                animateExit(
+                                  e.currentTarget.closest<HTMLElement>('.editable-row'),
+                                  motion,
+                                );
+                                const rest = custom.filter((x) => x.id !== i.id);
+                                pendingFocus.current =
+                                  rest.find((x) => x.type === type)?.id ?? `add-custom-${type}`;
+                                setCustom(rest);
+                              }}
                             >
                               <X size={18} aria-hidden="true" />
                             </Button>
                           </div>
                         ))}
                       <Button
+                        id={`add-custom-${type}`}
                         variant="secondary"
-                        onClick={() =>
-                          setCustom([...custom, { id: crypto.randomUUID(), name: '', type }])
-                        }
+                        onClick={() => {
+                          const id = crypto.randomUUID();
+                          pendingFocus.current = id;
+                          setCustom([...custom, { id, name: '', type }]);
+                        }}
                       >
                         <Plus size={16} aria-hidden="true" />
                         Añadir {type === 'GOOD' ? 'bueno' : 'malo'}
@@ -532,7 +572,7 @@ export function SetupPage() {
             )}
           </section>
         </div>
-        <aside className="setup-summary panel">
+        <aside className="setup-summary panel" ref={summaryRef}>
           <span className="eyebrow">La partida</span>
           <h2>{config.categoryName || 'Tu próxima temática'}</h2>
           <dl>
@@ -560,6 +600,10 @@ export function SetupPage() {
               {custom.some((i) => !i.name.trim()) && mode === 'CUSTOM' ? 'Hay filas vacías.' : ''}
             </p>
           )}
+          <div className="setup-sound">
+            <SoundToggle text />
+            <p className="field-hint">Efectos opcionales, apagados inicialmente.</p>
+          </div>
           <p className="muted small">
             Los tipos se ocultan durante la partida. El suspenso corre por tu cuenta.
           </p>

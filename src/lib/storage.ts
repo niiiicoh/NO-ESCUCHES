@@ -1,5 +1,9 @@
 import type { z } from 'zod';
-export const keys = { catalog: 'no-escuches:catalog:v1', game: 'no-escuches:game:v1' };
+export const keys = {
+  catalog: 'no-escuches:catalog:v1',
+  game: 'no-escuches:game:v1',
+  preferences: 'no-escuches:preferences:v1',
+};
 export interface StorageAdapter {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;

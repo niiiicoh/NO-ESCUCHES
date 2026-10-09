@@ -31,11 +31,14 @@ Las pruebas de navegador usan Edge instalado en Windows. En otro sistema, cambia
 - Configurar nombres, dinero inicial, total y límite entre `ceil(total / 2)` y el total.
 - Elegir una categoría con composición aleatoria libre, selección manual exacta o temática personalizada.
 - Añadir opciones temporales sin modificar el catálogo.
-- Asignar el ítem actual por un precio entero, incluido $0, respetando saldo y límite.
-- Terminar por agotamiento o por alcanzar el límite, con reparto restante gratuito.
+- Sortear una sola vez quién ofrece $1 en la primera subasta, antes de revelar el primer ítem. El resultado se guarda antes del giro y requiere confirmar Comenzar subasta.
+- Asignar el ítem actual por un precio entero desde $1, respetando saldo y límite; cada ítem vuelve a $1 sin comprador seleccionado.
+- Terminar por agotamiento o por alcanzar el límite, con reparto restante gratuito. Si ambos jugadores elegibles quedan sin saldo, se bloquean las compras y se conserva la partida.
 - Deshacer una única decisión, incluyendo todo su reparto automático, también tras recargar.
 - Revelar clasificaciones en resultados y repetir la configuración con otra mezcla.
 - Crear, editar, duplicar, activar, buscar y eliminar categorías e ítems; cambiar clasificación y mover ítems entre categorías.
+- Activar sonidos sintetizados localmente, probarlos y regular volumen 0–100; inicialmente apagados, volumen 35. Silenciar u ocultar la pestaña cancela sonidos actuales y pendientes.
+- Elegir movimiento Sistema, Reducido o Sin animaciones. La reducción del sistema se respeta siempre y la ruleta sin giro permite continuar inmediatamente.
 
 La pantalla del host no anuncia clasificaciones ni opciones futuras. Los resultados no determinan un ganador. Los nombres originales del seed se conservan.
 
@@ -44,9 +47,12 @@ La pantalla del host no anuncia clasificaciones ni opciones futuras. Los resulta
 Solo se utiliza `localStorage` con JSON versionado:
 
 - `no-escuches:catalog:v1`: categorías e ítems.
-- `no-escuches:game:v1`: partida actual y snapshot de deshacer.
+- `no-escuches:game:v1`: contenido de versión 2 con partida, snapshot de deshacer, resultado inicial y registro de primera visita a resultados. Se conserva la clave para recuperar datos existentes.
+- `no-escuches:preferences:v1`: sonido, volumen y movimiento.
 
 La recuperación ocurre antes de mostrar decisiones. Zod valida estructuras e invariantes: IDs, referencias, composición, índices, asignaciones, saldos y compatibilidad exacta del snapshot con la última transición. El orden aleatorio se guarda y no se sortea al recargar.
+
+Las partidas de versión 1 se normalizan sin borrar catálogo ni partida. Las compras históricas a $0 y el dinero inicial antiguo se conservan; las compras futuras exigen $1. Si ya hubo asignaciones, se omite la ruleta sin inventar un ganador, también al deshacer la primera compra. Una partida antigua vacía debe sortear antes de comprar. La siguiente acción guardada escribe la versión 2.
 
 Una escritura fallida mantiene el estado anterior y deja un mensaje persistente. Los datos dañados permiten restablecer únicamente catálogo o partida mediante una confirmación explícita. El seed se escribe solo si no hay catálogo guardado; un catálogo vacío sigue vacío. No se borran datos de otras aplicaciones.
 
@@ -66,7 +72,8 @@ Los datos pertenecen a este navegador y origen. No hay sincronización, archivo 
 | `src/repositories`                       | Contratos asíncronos del catálogo y partida; implementaciones locales                    |
 | `src/lib`                                | Adaptador de almacenamiento, validación y utilidades                                     |
 | `src/types`, `src/data`                  | Entidades separadas de snapshots y datos iniciales                                       |
-| `src/services`                           | Acceso de demostración centralizado                                                      |
+| `src/features/preferences`               | Preferencias locales y movimiento accesible                                              |
+| `src/services`                           | Acceso de demostración, eventos efímeros, síntesis Web Audio y salidas visuales          |
 
 La UI no accede directamente al almacenamiento ni importa los datos iniciales. Los repositorios pueden sustituirse por implementaciones remotas manteniendo sus contratos. No se incluyen backend, bases de datos, login, API externa ni despliegue.
 
@@ -81,5 +88,7 @@ Se leyeron las instrucciones completas de **UI/UX Pro Max**, **gpt-taste** y **a
 Outfit se sirve desde archivos locales del paquete `@fontsource`; la UI usa Segoe UI/system-ui. Los colores se centralizan en variables CSS y se exponen a Tailwind. Los emojis se reservan para categorías, tal como solicita la especificación. No hay descargas externas de fuentes o imágenes durante el uso.
 
 Fuentes técnicas consultadas: [Tailwind con Vite](https://tailwindcss.com/docs/installation/using-vite), [componentes Radix de shadcn/ui](https://ui.shadcn.com/docs/changelog/2025-06-radix-ui).
+
+GSAP, ya presente, coordina el giro y la carta saliente; CSS resuelve controles y entradas. Los tiempos se centralizan en tokens. El estado se guarda antes de presentar efectos: cancelar una animación o fallar el audio no revierte ni bloquea una compra. Los eventos tienen IDs, se consumen una vez y no se persiste una cola de sonidos.
 
 Consulta [VALIDACION.md](VALIDACION.md) para las verificaciones realizadas y límites de la revisión.

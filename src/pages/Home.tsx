@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Layers, Users, Shuffle, MoveUpRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useAppStore } from '../features/game/store';
 export function Home() {
+  const navigate = useNavigate();
   const game = useAppStore((s) => s.currentGame);
   return (
     <>
@@ -30,7 +31,16 @@ export function Home() {
             </Button>
             {game?.status === 'FINISHED' && (
               <Button asChild variant="secondary">
-                <Link to="/game/results">Ver resultados</Link>
+                <Link
+                  to="/game/results"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await useAppStore.getState().viewResults();
+                    navigate('/game/results');
+                  }}
+                >
+                  Ver resultados
+                </Link>
               </Button>
             )}
           </div>

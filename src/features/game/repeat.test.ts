@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { seedCatalog } from '../../data/seed';
-import { createGame, selectRandom, assignItem } from './engine';
+import { createGame, selectRandom, assignItem, drawOpening, confirmOpening } from './engine';
 import { repeatGame } from './repeat';
 import type { Choice, GameConfig } from '../../types';
 const config: GameConfig = {
@@ -23,12 +23,14 @@ describe('repetir configuración', () => {
       config,
       choices: selectRandom(pool, 8, 6),
     });
+    game = confirmOpening(drawOpening(game, () => 0.25));
     for (let i = 0; i < 4; i++)
       game = assignItem(game, game.players[0].id, 3, game.items[game.currentItemIndex].id);
     const repeat = repeatGame(game, catalog);
     expect(repeat.id).not.toBe(game.id);
     expect(repeat.players[0].id).not.toBe(game.players[0].id);
     expect(repeat.status).toBe('PLAYING');
+    expect(repeat.openingAuction).toEqual({ startingPlayerId: null, confirmed: false });
     expect(repeat.currentItemIndex).toBe(0);
     expect(repeat.config).toEqual(game.config);
     expect(

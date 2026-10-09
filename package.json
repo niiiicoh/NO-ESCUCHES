@@ -1,7 +1,7 @@
 {
   "name": "no-escuches",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5198 --strictPort",
@@ -13,6 +13,7 @@
   "dependencies": {
     "@fontsource/outfit": "^5.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.0",
+    "@radix-ui/react-dialog": "^1.2.0",
     "@radix-ui/react-slot": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

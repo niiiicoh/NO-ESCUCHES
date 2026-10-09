@@ -60,4 +60,10 @@ Las pruebas se ejecutaron en un navegador de escritorio con viewports emulados. 
 
 Se comprobó síntesis y cancelación mediante Web Audio; no se evaluó el nivel acústico en altavoces físicos ni el comportamiento de todos los navegadores móviles.
 
-La persistencia sigue siendo exclusivamente local por navegador y origen. Admin es de demostración y no tiene protección real. No se implementaron servicios externos, autenticación, bases de datos, sincronización ni hosting, conforme al alcance solicitado.
+La persistencia sigue siendo exclusivamente local por navegador y origen. Admin es de demostración y no tiene protección real. No se implementaron servicios de juego externos, autenticación, bases de datos ni sincronización. El hosting estático en GitHub Pages se añadió para corregir la publicación solicitada posteriormente.
+
+## Corrección de GitHub Pages
+
+La publicación anterior servía el index fuente de main, con una referencia a /src/main.tsx. Se añadió un workflow que instala con npm ci, ejecuta 54 pruebas de dominio y publica la compilación dist. El modo pages utiliza base /NO-ESCUCHES/ y HashRouter, mientras el desarrollo conserva BrowserRouter.
+
+La compilación para Pages se probó localmente en Edge con el prefijo real: inicio, preparación, ruleta, compra de $1, recuperación al recargar, Admin y catálogo. No hubo errores de JavaScript ni respuestas de recursos >=400. La ruleta mantuvo su ID al recargar y la compra mantuvo el saldo en $19. Evidencia: validation/pages-preview.json.

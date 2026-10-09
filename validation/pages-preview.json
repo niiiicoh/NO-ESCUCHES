@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-09T03:52:55.867Z",
+  "mode": "pages",
+  "base": "/NO-ESCUCHES/",
+  "router": "hash",
+  "checks": [
+    "Inicio carga recursos compilados",
+    "Preparación inicia partida",
+    "Ruleta conserva ID al recargar",
+    "Compra $1 guarda una sola asignación y saldo $19",
+    "Recarga juego con #/game/play",
+    "Admin recarga con #/admin",
+    "Catálogo recarga con #/categories"
+  ],
+  "openingPreserved": true,
+  "browserErrors": []
+}

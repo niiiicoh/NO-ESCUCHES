@@ -26,6 +26,16 @@ npm run test:e2e    # Flujos en Microsoft Edge
 
 Las pruebas de navegador usan Edge instalado en Windows. En otro sistema, cambia `channel` en `playwright.config.ts` por tu navegador o elimina esa opción e instala Chromium con `npx playwright install chromium`. Las capturas se generan en `validation/`.
 
+## GitHub Pages
+
+El sitio se publica en [NO ESCUCHES](https://niiiicoh.github.io/NO-ESCUCHES/). El workflow `.github/workflows/pages.yml` instala dependencias, ejecuta las pruebas del motor, compila y publica `dist/` al subir a `main`. En Settings → Pages, la fuente es **GitHub Actions**.
+
+`npm run build:pages` usa la base `/NO-ESCUCHES/` y rutas con hash, por ejemplo `/NO-ESCUCHES/#/game/play`, para permitir recargar sin 404. Para revisar esa compilación localmente: `npm run preview -- --mode pages`. El desarrollo local conserva sus rutas habituales.
+
+Los datos de la web publicada pertenecen a su propio origen; las partidas del servidor local no se trasladan automáticamente a GitHub Pages.
+
+Referencias: [despliegue de Vite en Pages](https://vite.dev/guide/static-deploy.html#github-pages), [fuente de publicación de Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
+
 ## Qué puedes hacer
 
 - Configurar nombres, dinero inicial, total y límite entre `ceil(total / 2)` y el total.
@@ -75,7 +85,7 @@ Los datos pertenecen a este navegador y origen. No hay sincronización, archivo 
 | `src/features/preferences`               | Preferencias locales y movimiento accesible                                              |
 | `src/services`                           | Acceso de demostración, eventos efímeros, síntesis Web Audio y salidas visuales          |
 
-La UI no accede directamente al almacenamiento ni importa los datos iniciales. Los repositorios pueden sustituirse por implementaciones remotas manteniendo sus contratos. No se incluyen backend, bases de datos, login, API externa ni despliegue.
+La UI no accede directamente al almacenamiento ni importa los datos iniciales. Los repositorios pueden sustituirse por implementaciones remotas manteniendo sus contratos. No se incluyen backend, bases de datos, login, API externa.
 
 ## Diseño y habilidades utilizadas
 
